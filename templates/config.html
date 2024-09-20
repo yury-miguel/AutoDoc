@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurações - Wave Auto Doc</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+</head>
+<body>
+    {% extends 'principal.html' %}
+
+    {% block content %}
+    <div class="container" style="margin-top: 90px">
+        <h2 style="color:rgb(172, 172, 161); font-weight: bold; margin-bottom: 30px;">Configurações</h2>
+        <form method="POST" action="/Config">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="input-group mb-4">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">Documentos</span>
+                        </div>
+                        <input type="text" class="form-control" name="documentos" value="{{ config.documentos }}" placeholder="Documentos">
+                    </div>
+                    
+                    <div class="input-group mb-4">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">Downloads</span>
+                        </div>
+                        <input type="text" class="form-control" name="downloads" value="{{ config.downloads }}" placeholder="Downloads">
+                    </div>
+
+                    <div class="input-group mb-4">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">Ano Doc</span>
+                        </div>
+                        <select class="form-control" name="anodocs">
+                            <option name="anodocs" value="{{ config.ano_docs }}" selected>{{ config.ano_docs }}</option>
+                            {% for ano in range(2020, 2031) %}
+                                {% if ano != config.ano_docs %}
+                                    <option name="anodocs" value="{{ ano }}">{{ ano }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="input-group mb-4">
+                        <input type="text" class="form-control" name="emailPadrao" value="{{ config.email_padrao }}" placeholder="Email Padrão" aria-label="Email Padrão">
+                        <div class="input-group-append">
+                            <span class="input-group-text">Email Padrão</span>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group mb-4">
+                        <input type="password" class="form-control" name="senhaPadrao" value="{{ config.senha_padrao }}" placeholder="Senha Email" aria-label="Senha Email">
+                        <div class="input-group-append">
+                            <span class="input-group-text">Senha Email</span>
+                        </div>
+                    </div>
+
+                    <div class="input-group mb-4">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">Assunto Padrão</span>
+                        </div>
+                        <input type="text" class="form-control" name="assuntoEmail" value="{{ config.assunto_padrao }}" placeholder="Assunto Automático Email">
+                    </div>
+                    
+                    <div class="input-group mb-4">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">Mensagem Padrão</span>
+                        </div>
+                        <textarea class="form-control" name="mensagemEmail" rows="3" placeholder="Mensagem Automática Email">{{ config.mensagem_padrao }}</textarea>
+                    </div>
+                </div>
+    
+
+                <div class="col-md-6">
+                    <div class="input-group mb-4">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">Nome Empresa</span>
+                        </div>
+                        <input type="text" class="form-control" name="nomeEmpresa" placeholder="Nome Empresa">
+                    </div>
+                    
+                    <div class="input-group mb-4">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">Email Cliente</span>
+                        </div>
+                        <input type="email" class="form-control" name="emailCliente" placeholder="Email Cliente">
+                    </div>
+                    <button type="button" class="btn btn-primary mt-3" onclick="cadastrarCliente()">Cadastrar</button>
+                </div>
+            </div>
+            <button type="submit" style="background-color: #007bff; color: white; margin-top: -5px; border-radius: 5px; border: none; padding: 7px;">Salvar Configurações</button>
+        </form>
+    </div>
+
+    <script>
+        function cadastrarCliente() {
+            const nomeEmpresa = document.querySelector('input[name="nomeEmpresa"]').value;
+            const emailCliente = document.querySelector('input[name="emailCliente"]').value;
+
+            fetch('/Cadastrar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `nomeEmpresa=${nomeEmpresa}&emailCliente=${emailCliente}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message || data.error);
+                document.querySelector('input[name="nomeEmpresa"]').value = '';
+                document.querySelector('input[name="emailCliente"]').value = '';
+            })
+            .catch(error => console.error('Erro:', error));
+        }
+    </script>
+
+    {% endblock %}
+    
+</body>
+</html>

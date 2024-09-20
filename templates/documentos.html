@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentos - Wave Auto Doc</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/documentos.css') }}">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+</head>
+<body>
+    {% extends 'principal.html' %}
+
+    {% block content %}
+        <div class="container mt-3">
+
+            <nav class="navbar navbar-light bg-light mb-4">
+                <form class="form-inline w-100" method="POST">
+                    <input class="form-control mr-sm-2 w-75" type="search" id="documentFilter" name="documentFilter" placeholder="Digite o arquivo, categoria ou nome " aria-label="Search">
+                    <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Filtrar</button>
+                </form>
+            </nav>
+
+
+            <div class="grid-container mt-4">
+                {% if dados %}
+                    {% for documento in dados %}
+                        <div class="grid-item">
+                            <img src="{{ url_for('static', filename='img/docs.png') }}" alt="Documento">
+                            <div><strong>Caminho:</strong> {{ documento.caminho }}</div>
+                            <div><strong>Categoria:</strong> {{ documento.categoria }}</div>
+                            <div><strong>Nome Extraído:</strong> {{ documento.nome_extraido }}</div>                            
+                            <div class="{{ 'status-verificado' if documento.status == 'Verificado' else 'status-nao-verificado' }}">
+                                {{ documento.status }}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center mt-4">Nenhum documento encontrado.</div>
+                {% endif %}
+            </div>
+        </div>
+    {% endblock %}
+</body>
+</html>

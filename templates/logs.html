@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logs - Wave Auto Doc</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/logs.css') }}">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <script src="{{ url_for('static', filename='js/logs.js') }}"></script>
+</head>
+<body>
+    {% extends 'principal.html' %}
+
+    {% block content %}
+        <div class="container mt-3">
+            <h2 style="color:rgb(172, 172, 161); font-weight: bold; margin-bottom: 30px;">Logs</h2>
+            
+            <div class="row mb-4">
+                <div class="col-md-12 text-center">
+                    <div class="form-group">
+                        <label for="logDateFilter">Filtrar por Data:</label>
+                        <input type="date" class="form-control d-inline-block w-auto" id="logDateFilter">
+                    </div>
+                    <button type="button" class="btn btn-primary mx-2" onclick="buscarLogs()">Buscar Logs</button>
+                    <button type="button" class="btn btn-secondary mx-2" onclick="exportarLogs()">Exportar Logs</button>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="logs-container">
+                        {% if registros %}
+                            <ul class="list-group">
+                                {% for registro in registros %}
+                                    <li class="list-group-item">{{ registro }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p>Não há logs para exibir.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endblock %}
+</body>
+</html>
