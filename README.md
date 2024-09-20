@@ -3,6 +3,15 @@ Sistema de controle de ficheiros, com leitura automática de PDFs e extração d
 
 !! Recomendo não mover o sistema da pasta na qual foi enviado, e não adicionar ele na área de trabalho.Além do mais para que os PDFs sejam lidos e movidos o sistema deve estar em funcionamento, é necessário permitir a autorização de uso das redes privadas e publicas quando solicitado.
 
+## Sistema AutoDoc
+![Captura de Tela (39)](https://github.com/user-attachments/assets/c313b2f2-1f36-44c5-831c-d6e9743844c1)
+
+![Captura de Tela (40)](https://github.com/user-attachments/assets/de8d4e5f-af0c-43ff-81eb-6d9825e6a8e4)
+
+![Captura de Tela (41)](https://github.com/user-attachments/assets/c3b7767c-0928-4eb0-81d3-a2d30cac1731)
+
+![Captura de Tela (42)](https://github.com/user-attachments/assets/d2d2f25c-38f8-4bf2-b822-5dc7e3d967a2)
+
 
 ## 🚀 Recursos
 
