@@ -4,6 +4,7 @@ import os
 import re
 import PyPDF2
 import gerenciador
+from datetime import datetime
 
 
 # REALIZA PROCESSO DE LEITURA DO PDF
@@ -11,12 +12,13 @@ class ExtracaoPdf:
     def __init__(self, caminho_pdf):
         self.nome = None
         self.categoria = None
+        self.vencimento = None
         self.caminho_pdf = caminho_pdf
         self.processar_pdf()
 
     # REPRESENTAÇÃO DA CLASSE IMPRESSA
     def __repr__(self):
-        return f"Nome: {self.nome}, Categoria: {self.categoria}"
+        return f"Nome: {self.nome}, Categoria: {self.categoria}, DataVencimento {self.data_vencimento}"
 
     # PROCESSA PDF E REALIZA EXTRAÇÃO
     def processar_pdf(self):
@@ -26,6 +28,8 @@ class ExtracaoPdf:
             texto_pdf = self.extrair_texto_pdf()
 
             if texto_pdf:
+                texto_categoria = self.normalizar_texto(texto_pdf)
+                self.vencimento = self.extrair_vencimento(texto_categoria, self.categoria)
                 self.nome = self.extrair_nome(texto_pdf, self.categoria)
             else:
                 gerenciador.registros(f"Erro ao processar pdf: Texto não extraído")
@@ -35,8 +39,13 @@ class ExtracaoPdf:
             texto_pdf = self.extrair_texto_pdf()
 
             if texto_pdf:
+                vencimentos_categorias = ["FGTS", "DAS", "INSS", "PIS", "COFINS", "IRPJ", "CSLL"]
                 texto_categoria = self.normalizar_texto(texto_pdf)
                 self.categoria = self.classificar_pdf(texto_categoria)
+
+                if self.categoria in vencimentos_categorias:
+                    texto_categoria = self.normalizar_texto(texto_pdf)
+                    self.vencimento = self.extrair_vencimento(texto_categoria, self.categoria)
 
                 if self.categoria:
                     self.nome = self.extrair_nome(texto_pdf, self.categoria)
@@ -147,21 +156,21 @@ class ExtracaoPdf:
     # EXTRAI OS NOMES COM BASE EM PADRÕES DE CATEGORIAS
     def extrair_nome(self, texto_pdf, classificacao):
         padroes_nomes = {
-            "CNPJ": r"NOME EMPRESARIAL\s*([A-Z\s&\.]+)",
-            "CND MUNICIPAL": r"(?i)nome:\s*([A-Z\s]+)",
-            "CND FEDERAL": r"(?i)nome:\s*([A-Z\s]+)",
-            "CND ESTADUAL": r"(?i)nome:\s*([A-Z\s]+)",
-            "CND TRABALHISTA": r"(?i)nome:\s*([A-Z\s]+)\s*\(MATRIZ E FILIAIS\)?",
-            "COFINS": r"01 NOME / TELEFONE\s*([A-Z\s.]+)",
-            "CSLL": r"01 NOME / TELEFONE\s*([A-Z\s.]+)",
-            "DAS": r"\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}\s+([A-Z\s&\.]+)",
-            "FGTS": r"Nome\/Razão Social do Empregador\s*([A-Z\s]+)",
-            "INSS": r"\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}\s+([A-Z\s&\.]+)",
-            "IRPJ": r"01 NOME / TELEFONE\s*([A-Z\s.]+)",
-            "PARCELAMENTO MEI": r"\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}\s+([A-Z\s]+)",
-            "PARCELAMENTO SIMPLES": r"\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}\s+([A-Z\s]+)",
-            "PIS": r"01 NOME / TELEFONE\s*([A-Z\s.]+)",
-            "RECIBO PAGAMENTO": r"^([A-Z\s&\.]+)\s*\(\d+\)\s*Recibo de Pagamento"
+            "CNPJ": r"NOME EMPRESARIAL\s*([\dA-Z\s&\.\-]+)",
+            "CND MUNICIPAL": r"(?i)nome:\s*([\dA-Z\s\-\.]+)",
+            "CND FEDERAL": r"(?i)nome:\s*([\dA-Z\s\-\.]+)",
+            "CND ESTADUAL": r"(?i)nome:\s*([\dA-Z\s\-\.]+)",
+            "CND TRABALHISTA": r"(?i)nome:\s*([\dA-Z\s\-\.]+)\s*\(MATRIZ E FILIAIS\)?",
+            "COFINS": r"01 NOME / TELEFONE\s*([\dA-Z\s\.\-]+)",
+            "CSLL": r"01 NOME / TELEFONE\s*([\dA-Z\s\.\-]+)",
+            "DAS": r"\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}\s+([\dA-Z\s&\.\-]+)",
+            "FGTS": r"Nome\/Razão Social do Empregador\s*([\dA-Z\s\-\.]+)",
+            "INSS": r"\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}\s+([\dA-Z\s&\.\-]+)",
+            "IRPJ": r"01 NOME / TELEFONE\s*([\dA-Z\s\.\-]+)",
+            "PARCELAMENTO MEI": r"\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}\s+([\dA-Z\s\-\.]+)",
+            "PARCELAMENTO SIMPLES": r"\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}\s+([\dA-Z\s\-\.]+)",
+            "PIS": r"01 NOME / TELEFONE\s*([\dA-Z\s\.\-]+)",
+            "RECIBO PAGAMENTO": r"^([\dA-Z\s&\.\-]+)\s*\(\d+\)\s*Recibo de Pagamento"
         }
 
         if classificacao in padroes_nomes:
@@ -174,4 +183,32 @@ class ExtracaoPdf:
 
                 return nome_limpo
 
+        return None
+
+    # FUNÇÃO CHAMADA PARA EXTRAIR A DATA-VENCIMENTO DE CATEGORIAS ESPECIFICAS
+    def extrair_vencimento(self, texto_normalizado, categoria):
+        padroes = {
+            "FGTS": r"pagar este documento até\s*(\d{1,2}/\d{1,2}/\d{4})|observações\s*(\d{1,2}/\d{1,2}/\d{4})",
+            "DAS": r"pagar até:\s*(\d{1,2}/\d{1,2}/\d{4})|pagar este documento até\s*(\d{1,2}/\d{1,2}/\d{4})",
+            "INSS": r"pagar até:\s*(\d{1,2}/\d{1,2}/\d{4})|pagar este documento até\s*(\d{1,2}/\d{1,2}/\d{4})|vencimento:\s*(\d{1,2}/\d{1,2}/\d{4})",
+            "PIS": r"autenticação bancária.*?(\d{1,2}/\d{1,2}/\d{4})|(\d{1,2}/\d{1,2}/\d{4})",
+            "COFINS": r"autenticação bancária.*?(\d{1,2}/\d{1,2}/\d{4})|(\d{1,2}/\d{1,2}/\d{4})",
+            "IRPJ": r"autenticação bancária.*?(\d{1,2}/\d{1,2}/\d{4})|(\d{1,2}/\d{1,2}/\d{4})",
+            "CSLL": r"autenticação bancária.*?(\d{1,2}/\d{1,2}/\d{4})|(\d{1,2}/\d{1,2}/\d{4})",
+        }
+
+        padrao = padroes.get(categoria)
+        if padrao:
+            matches = re.findall(padrao, texto_normalizado)
+            datas = [match[0] if match[0] else match[1] for match in matches if match]
+            if datas:
+                try:
+                    data_vencimento = datetime.strptime(datas[0], '%d/%m/%Y')
+
+                    data_vencimento_formatada = data_vencimento.strftime('%d-%m-%Y %H:%M:%S')
+                    return data_vencimento_formatada
+                except ValueError as e:
+                    gerenciador.registros(f"Erro ao converter a data pdf_auto: {e}")
+                    return None
+        
         return None

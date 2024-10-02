@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório - Wave Auto Doc</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script> <!-- XLSX export -->
+</head>
+<style>
+    .tabela-container {
+        max-height: 300px;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+    </style>
+<body>
+    {% extends 'principal.html' %}
+
+    {% block content %}
+    <div class="container mt-5">
+        <h2 class="text-center">Relatório de Documentos</h2>
+
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <label for="filtroEmpresa">Filtrar por Empresa:</label>
+                <input type="text" id="filtroEmpresa" class="form-control" placeholder="Nome da empresa">
+            </div>
+            <div class="col-md-4">
+                <label for="filtroDocumento">Filtrar por Documento:</label>
+                <input type="text" id="filtroDocumento" class="form-control" placeholder="Documento">
+            </div>
+            <div class="col-md-4">
+                <label for="filtroData">Filtrar por Data Vencimento:</label>
+                <input type="date" id="filtroData" class="form-control">
+            </div>
+        </div>
+
+        <div class="text-right mb-3">
+            <button class="btn btn-primary" onclick="exportarTabela()">Exportar para XLSX</button>
+        </div>
+
+        <div class="tabela-container">
+            <table class="table table-bordered table-striped" id="tabelaDocumentos">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Empresa/Destinatário</th>
+                        <th>Documento</th>
+                        <th>Status</th>
+                        <th>Erro</th>
+                        <th>Data-Vencimento</th>
+                        <th>Data-Envio</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelaBody">
+                    {% for relatorio in relatorios %}
+                    <tr>
+                        <td>{{ relatorio.empresa }}</td>
+                        <td>{{ relatorio.documento }}</td>
+                        <td class="{% if relatorio.status == 'Enviado' %}text-success{% elif relatorio.status == 'Falha' %}text-danger{% endif %}">
+                            {{ relatorio.status }}
+                        </td>
+                        <td>{{ relatorio.erro }}</td>
+                        <td>{{ relatorio.data_vencimento }}</td>
+                        <td>{{ relatorio.data_hora }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        </table>
+    </div>
+
+    <script>
+        function exportarTabela() {
+            var wb = XLSX.utils.table_to_book(document.getElementById('tabelaDocumentos'), { sheet: "Relatório" });
+            XLSX.writeFile(wb, 'relatorio_documentos.xlsx');
+        }
+        
+        document.getElementById('filtroEmpresa').addEventListener('input', filtrarTabela);
+        document.getElementById('filtroDocumento').addEventListener('input', filtrarTabela);
+        document.getElementById('filtroData').addEventListener('change', filtrarTabela);
+        
+        function filtrarTabela() {
+            var filtroEmpresa = document.getElementById('filtroEmpresa').value.toLowerCase();
+            var filtroDocumento = document.getElementById('filtroDocumento').value.toLowerCase();
+            var filtroData = document.getElementById('filtroData').value; // Data no formato yyyy-MM-dd
+            var tabela = document.getElementById('tabelaDocumentos').getElementsByTagName('tbody')[0];
+            var linhas = tabela.getElementsByTagName('tr');
+
+            for (var i = 0; i < linhas.length; i++) {
+                var colEmpresa = linhas[i].getElementsByTagName('td')[0].innerText.toLowerCase();
+                var colDocumento = linhas[i].getElementsByTagName('td')[1].innerText.toLowerCase();
+                var colDataVencimento = linhas[i].getElementsByTagName('td')[4].innerText;
+
+                // Verifica se colDataVencimento não está vazio ou não é "Vazio"
+                if (colDataVencimento && colDataVencimento !== "Vazio") {
+                    // Converte de dd-mm-YYYY para yyyy-MM-dd para a comparação
+                    var partesData = colDataVencimento.split(' ')[0].split('-'); // Quebra por espaço e depois por "-"
+                    var dataFormatada = `${partesData[2]}-${partesData[1]}-${partesData[0]}`; // Formato yyyy-MM-dd
+                } else {
+                    dataFormatada = ""; // Se estiver vazio, torna a variável vazia para comparação
+                }
+
+                // Aplica o filtro
+                if (
+                    (filtroEmpresa === "" || colEmpresa.includes(filtroEmpresa)) &&
+                    (filtroDocumento === "" || colDocumento.includes(filtroDocumento)) &&
+                    (filtroData === "" || dataFormatada === filtroData)
+                ) {
+                    linhas[i].style.display = "";
+                } else {
+                    linhas[i].style.display = "none";
+                }
+            }
+        }
+    </script>
+
+    {% endblock %}
+</body>
+</html>

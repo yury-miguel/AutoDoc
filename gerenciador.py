@@ -67,7 +67,7 @@ def cadastra_dados(nome, email):
 
 
 # FUNÇÃO QUE CONTROLA O ENVIO DE EMAILS MANUAIS
-def emails_manuais(destinatario, assunto, mensagem, caminho_anexo=None):
+def emails_manuais(destinatario, assunto, mensagem, caminho_anexo=None, categoria=None, data_vencimento=None):
     load_dotenv()
     dados = dotenv_values(".env")
     remetente = dados['EMAIL']
@@ -75,7 +75,7 @@ def emails_manuais(destinatario, assunto, mensagem, caminho_anexo=None):
 
     try:
         if remetente and senha is not None:
-            email = email_auto.enviar_email(remetente, senha, destinatario, assunto, mensagem, caminho_anexo)
+            email = email_auto.enviar_email(remetente, senha, destinatario, assunto, mensagem, caminho_anexo, 'doc.pdf', destinatario, categoria, data_vencimento)
             return email
         else:
             raise ValueError('Remetente ou senha não definidos.')
@@ -87,7 +87,7 @@ def emails_manuais(destinatario, assunto, mensagem, caminho_anexo=None):
 
 
 # FUNÇÃO QUE CONTROLA O ENVIO DE EMAILS AUTOMÁTICOS
-def emails_automaticos(destinatario_nome=None, caminho_anexo=None):
+def emails_automaticos(destinatario_nome=None, caminho_anexo=None, categoria=None, data_vencimento=None):
     load_dotenv()
     dados = dotenv_values(".env")
     remetente = dados['EMAIL']
@@ -103,7 +103,7 @@ def emails_automaticos(destinatario_nome=None, caminho_anexo=None):
                 anexo_nome = os.path.basename(caminho_anexo)
 
                 with open(caminho_anexo, 'rb') as anexo:
-                    email_auto.enviar_email(remetente, senha, destinatario_email, assunto, mensagem, anexo, anexo_nome)
+                    email_auto.enviar_email(remetente, senha, destinatario_email, assunto, mensagem, anexo, anexo_nome, destinatario_nome, categoria, data_vencimento)
             else:
                 raise ValueError(f"Email ou anexo não encontrado para o destinatário: {destinatario_nome}:{caminho_anexo}")
         else:
@@ -124,10 +124,13 @@ def buscar_email_por_nome(nome):
 
         livro = openpyxl.load_workbook(arquivo_excel)
         folha = livro.active
+        similaridade_limite = 0.5
 
         for linha in folha.iter_rows(min_row=2, values_only=True):
             nome_excel, email_excel = linha
-            if nome_excel == nome:
+            nome_proximo = difflib.get_close_matches(nome.lower(), [nome_excel.lower()], n=1, cutoff=similaridade_limite)
+
+            if nome_proximo:
                 return email_excel
 
         return None
@@ -163,32 +166,30 @@ def mover_pdf_para_pasta(nome_pdf, categoria, nome_extraido, caminho_pdf):
         caminho_docs = dados["DOCS"]
         ano_docs = dados["ANO"]
 
-        subpastas = ["MEI", "LUCRO PRESUMIDO", "SIMPLES NACIONAL"]
         empresa_encontrada = False
         similaridade_limite = 0.5
 
-        for subpasta in subpastas:
-            caminho_subpasta = os.path.join(caminho_docs, subpasta)
-            empresas_existentes = os.listdir(caminho_subpasta)
-            nome_proximo = difflib.get_close_matches(nome_extraido, empresas_existentes, n=1, cutoff=similaridade_limite)
+        empresas_existentes = os.listdir(caminho_docs)
+        nome_proximo = difflib.get_close_matches(nome_extraido, empresas_existentes, n=1, cutoff=similaridade_limite)
+
             
-            if nome_proximo:
-                caminho_empresa = os.path.join(caminho_subpasta, nome_proximo[0])
+        if nome_proximo:
+            caminho_empresa = os.path.join(caminho_docs, nome_proximo[0])
 
-                if os.path.exists(caminho_empresa):
-                    empresa_encontrada = True
+            if os.path.exists(caminho_empresa):
+                empresa_encontrada = True
 
-                    caminho_categoria = os.path.join(caminho_empresa, categoria)
-                    if not os.path.exists(caminho_categoria):
-                        os.makedirs(caminho_categoria)
+                caminho_categoria = os.path.join(caminho_empresa, categoria)
+                if not os.path.exists(caminho_categoria):
+                    os.makedirs(caminho_categoria)
 
-                    caminho_ano = os.path.join(caminho_categoria, ano_docs)
-                    if not os.path.exists(caminho_ano):
-                        os.makedirs(caminho_ano)
+                caminho_ano = os.path.join(caminho_categoria, ano_docs)
+                if not os.path.exists(caminho_ano):
+                    os.makedirs(caminho_ano)
 
-                    novo_caminho_pdf = os.path.join(caminho_ano, nome_pdf)
-                    shutil.move(caminho_pdf, novo_caminho_pdf)
-                    return novo_caminho_pdf
+                novo_caminho_pdf = os.path.join(caminho_ano, nome_pdf)
+                shutil.move(caminho_pdf, novo_caminho_pdf)
+                return novo_caminho_pdf
 
         if not empresa_encontrada:
             caminho_empresa_sistema = os.path.join(caminho_docs, f"Sistema_{nome_extraido}")
@@ -241,7 +242,7 @@ def monitorar_pdfs():
                 
                 if extrator.nome and extrator.categoria:
                     novo_caminho = mover_pdf_para_pasta(arquivo, extrator.categoria, extrator.nome, caminho_pdf)
-                    emails_automaticos(destinatario_nome=extrator.nome, caminho_anexo=novo_caminho)
+                    emails_automaticos(destinatario_nome=extrator.nome, caminho_anexo=novo_caminho, categoria=extrator.categoria, data_vencimento=extrator.vencimento)
                     status_pdf(arquivo, extrator.categoria, extrator.nome, novo_caminho)
                 else:
                     status_pdf(arquivo, extrator.categoria, extrator.nome, caminho_pdf)
@@ -368,6 +369,22 @@ def registros(texto):
 
 
 
+# FUNÇÃO QUE REGISTRA AS OCORRENCIAS DO RELATÓRIO
+def relatorios(empresa="", documento="", status="", data_vencimento="", erro="Nenhum"):
+    data_hora = datetime.now().strftime('%d-%m-%Y %H:%M:%S')
+
+    empresa = empresa if empresa else 'Vazio'
+    documento = documento if documento else 'Vazio'
+    status = status if status else 'Vazio'
+    erro = erro if erro else 'Vazio'
+    data_vencimento = data_vencimento if data_vencimento else 'Vazio'
+    
+    with open('relatorio.txt', 'a', encoding='utf-8') as arquivo_log:
+        arquivo_log.write(f"{empresa} - {documento} - {status} - {erro} - {data_vencimento} - {data_hora}\n")
+
+
+
+
 # FUNÇÃO QUE RETORNA OS REGISTROS DE FORMA ORGANIZADA PARA SEREM EXIBIDOS
 def retorna_registros(data_filtro=None):
     try:
@@ -388,4 +405,66 @@ def retorna_registros(data_filtro=None):
 
     except Exception as e:
         registros(f"Erro ao ler logs: {e}")
+        return []
+
+
+
+# RETORNA OS RELATÓRIOS OU SE HOUVER FILTROS, RETORNA RELATÓRIOS FILTRADOS
+def retorna_relatorios(data_filtro=None, empresa_filtro=None, documento_filtro=None):
+    try:
+        if not os.path.exists('relatorio.txt'):
+            return []  
+
+        with open('relatorio.txt', 'r', encoding='utf-8') as arquivo:
+            linhas = arquivo.readlines()
+
+        relatorios = []
+        for linha in linhas:
+            # Separar os campos com base em " - ", preservando espaços
+            campos = linha.strip().split(' - ')
+
+            # Garantir que sempre haja 6 campos, preenchendo com 'Vazio' se necessário
+            while len(campos) < 6:
+                campos.append('Vazio')
+
+            # Atribuir os valores corretos aos campos
+            empresa = campos[0] if len(campos) > 0 else 'Vazio'  # Empresa na posição 0
+            documento = campos[1] if len(campos) > 1 else 'Vazio'  # Documento na posição 1
+            status = campos[2] if len(campos) > 2 else 'Vazio'    # Status na posição 2
+            erro = campos[3] if len(campos) > 3 else 'Vazio'      # Erro na posição 3
+            data_vencimento = campos[4] if len(campos) > 4 else 'Vazio'  # Data de vencimento na posição 4
+            data_hora = campos[5] if len(campos) > 5 else 'Vazio'  # Data e hora na posição 5
+            incluir_linha = True
+
+            if data_filtro and data_vencimento != 'Vazio':
+                try:
+                    data_obj_vencimento = datetime.strptime(data_vencimento, '%d-%m-%Y %H:%M:%S')
+                    data_filtro_obj = datetime.strptime(data_filtro, '%Y-%m-%d')
+                    if data_obj_vencimento.date() != data_filtro_obj.date():
+                        incluir_linha = False
+                except ValueError:
+                    incluir_linha = False
+
+            if empresa_filtro:
+                if empresa_filtro.lower() not in empresa.lower():
+                    incluir_linha = False
+
+            if documento_filtro:
+                if documento_filtro.lower() not in documento.lower():
+                    incluir_linha = False
+
+            if incluir_linha:
+                relatorios.append({
+                    'empresa': empresa,
+                    'documento': documento,
+                    'status': status,
+                    'erro': erro,
+                    'data_vencimento': data_vencimento,
+                    'data_hora': data_hora
+                })
+
+        return relatorios
+
+    except Exception as e:
+        registros(f"Erro ao ler relatorios: {e}")
         return []

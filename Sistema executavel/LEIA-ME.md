@@ -14,6 +14,7 @@ Sistema de controle de ficheiros, com leitura automática de PDFs e extração d
 
 - **Logs:** Registra operações e possíveis problemas ou erros do sistema.
 
+- **Relatórios:** Permite ver datas de vencimentos de documentos e se foi enviado ou não para o cliente por email.
 
 ## 📋 Funcionalidades
 
@@ -57,6 +58,11 @@ permite a anexação de arquivos pdfs e sua pré visualização, e retorna para 
 
 Visualização das operações durante o funcionamento do sistema, permite ver erros ou falhas que podem ou não acontecer
 no sistema. O sistema foi muito bem feito, é apenas para facilitar a identificação de qualquer problema.
+
+
+### Relatórios
+
+Tabela onde registra os emails enviados manualmente e automaticamente para os clientes. Tem como objetivo mostrar se os documetos foram enviados no prazo de seus vencimentos, também permite exportar dados com base em filtros de data, empresa ou documento no formato .XLSX
 
 
 ## 📦 Atenção:

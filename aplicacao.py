@@ -9,6 +9,7 @@ from datetime import datetime
 from dotenv import load_dotenv, dotenv_values
 from flask import Flask, render_template, jsonify, redirect, request, send_file
 
+
 # INICIALIZAÇÃO DAS VARIÁVEIS PREDEFINÇÃO DO SISTEMA TOP_VPN
 load_dotenv()
 sistema = Flask(__name__)
@@ -46,12 +47,17 @@ def email():
         assunto  = request.form.get('assunto')
         mensagem = request.form.get('mensagem')
         anexo = request.files.get('anexarDocumento')
+        categoria = request.form.get('categoria')
+        data_vencimento = request.form.get('dataVencimento')
+
+        if data_vencimento:
+            data_vencimento = datetime.strptime(data_vencimento, '%Y-%m-%d').strftime('%d-%m-%Y %H:%M:%S')
 
         if anexo:
-            status = gerenciador.emails_manuais(destinatario, assunto, mensagem, anexo)
+            status = gerenciador.emails_manuais(destinatario=destinatario, assunto=assunto, mensagem=mensagem, caminho_anexo=anexo, categoria=categoria, data_vencimento=data_vencimento)
         else:
-            status = gerenciador.emails_manuais(destinatario, assunto, mensagem)
-
+            status = gerenciador.emails_manuais(destinatario=destinatario, assunto=assunto, mensagem=mensagem, categoria=categoria, data_vencimento=data_vencimento)
+  
         return status
     
 
@@ -108,6 +114,17 @@ def logs():
     return render_template("logs.html", registros=registros)
 
 
+# ROTA PARA EXIBIR O RELATORIO DE ENVIOS
+@sistema.route("/Relatorios", methods=["GET", "POST"])
+def relatorios():
+    data_filtro = request.args.get('data')
+    empresa_filtro = request.args.get('empresa')
+    documento_filtro = request.args.get('documento')
+
+    relatorios = gerenciador.retorna_relatorios(data_filtro=data_filtro, empresa_filtro=empresa_filtro, documento_filtro=documento_filtro)
+    return render_template('relatorios.html', relatorios=relatorios)
+
+
 # ROTA PARA EXPORTAR ARQUIVO .TXT NA MÁQUINA CLIENTE
 @sistema.route("/exportar_logs", methods=["POST"])
 def exportar_logs():
@@ -134,10 +151,7 @@ def iniciar_servidor():
 
 # FUNÇÃO QUE INICIALIZA SISTEMA WEB FLASK
 if __name__ == '__main__':
-    if datetime.now().date() >= datetime(2024, 9, 26).date():
-         print("Erro dtme")
-    else:
-        iniciar_monitoramento()
-        thread = threading.Thread(target=iniciar_servidor)
-        thread.start()
-        webbrowser.open("http://127.0.0.1:8010")
+    iniciar_monitoramento()
+    thread = threading.Thread(target=iniciar_servidor)
+    thread.start()
+    webbrowser.open("http://127.0.0.1:8010")

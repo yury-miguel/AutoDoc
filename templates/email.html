@@ -33,20 +33,34 @@
                             <textarea class="form-control" id="mensagem" name="mensagem" rows="4" placeholder="Mensagem"></textarea>
                         </div>
                         
-                        <div class="form-group mb-3">
-                            <label for="tipo" style="color:rgb(204, 204, 204);"">Tipo</label>
-                            <select class="form-control" id="tipo">
-                                <option value="">Email</option>
+                       <div class="form-group mb-3">
+                            <label for="categoria" style="color:rgb(204, 204, 204);">Categoria</label>
+                            <select class="form-control" id="categoria" name="categoria">
+                                <option value=""></option>
+                                <option value="CND ESTADUAL">CND ESTADUAL</option>
+                                <option value="CND FEDERAL">CND FEDERAL</option>
+                                <option value="TCND MUNICIPAL">CND MUNICIPAL</option>
+                                <option value="CND TRABALHISTA">CND TRABALHISTA</option>
+                                <option value="CNPJ">CNPJ</option>
+                                <option value="COFINS">COFINS</option>
+                                <option value="CSLL">CSLL</option>
+                                <option value="DAS">DAS</option>
+                                <option value="FGTS">FGTS</option>
+                                <option value="INSS">INSS</option>
+                                <option value="IRPJ">IRPJ</option>
+                                <option value="PARCELAMENTO MEI">PARCELAMENTO MEI</option>
+                                <option value="PARCELAMENTO SIMPLES">PARCELAMENTO SIMPLES</option>
+                                <option value="PIS">PIS</option>
+                                <option value="RECIBO PAGAMENTO">RECIBO PAGAMENTO</option>
+                                <option value=""></option>
                             </select>
                         </div>
                         
                         <div class="form-group mb-3">
-                            <label for="alvo" style="color:rgb(204, 204, 204);"">Alvo</label>
-                            <select class="form-control" id="alvo">
-                                <option value="">Documentações</option>
-                            </select>
+                            <label for="dataVencimento" style="color:rgb(204, 204, 204);">Data de Vencimento</label>
+                            <input type="date" class="form-control" id="dataVencimento" name="dataVencimento">
                         </div>
-                        
+                            
                         <button type="submit" class="btn btn-primary mr-2">Enviar</button>
                         <button type="reset" class="btn btn-secondary">Cancelar</button>
                     </div>
